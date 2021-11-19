@@ -126,11 +126,14 @@ def get_data(parsed_sport, pages_amount):
 
             news_info.append({
                 "Заголовок": title,
-                "Сслыка": href,
+                "Ссылка": href,
                 "Тег": tag,
                 "Количество комментариев": comments,
                 "Дата публикации": time
             })
+
+        if parsed_sport == "/all/":
+            parsed_sport = "/"
 
         count += 1
         print(f"# Новости со страницы {count} записаны...")
