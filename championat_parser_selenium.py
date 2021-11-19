@@ -126,7 +126,7 @@ def get_data(url, parsed_sport, page_number):
 
         news_info.append({
             "Заголовок": title,
-            "Сслыка": href,
+            "Ссылка": href,
             "Тема": theme,
             "Количество комментариев": comments,
             "Дата публикации": time
