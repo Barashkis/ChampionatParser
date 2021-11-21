@@ -1,17 +1,15 @@
-# Описание проекта
+# Project description
 * * *
-Данный репозиторий содержит в себе файлы моего небольшого проекта - парсера сайта championat.com,
-на котором публикуются новости спорта.
+This repository contains files of my small project - parser of championat.com,
+which publishes sports news.
 
-После запуска парсера будет вам будет предложено выбрать вид спорта и количество страниц с новостями,
-которые надо извлечь из сайта.
+After starting the parser you will be prompted to choose the type of sport and the number of pages with news, that you want to extract from the site.
 
-По итогу будет создана директория *data*, в которую будут помещены HTML-страницы
-сайта со всеми новостями (чтобы не долбить сайт постоянными запросами); один *json* файл,
-в нем будет содержаться информация о каждой новости (а именно ее заголовок, ссылка на нее, количество комментариев,
-тэг и дата публикации).
+As a result a directory *data* will be created, which will contain the HTML pages
+with all the news (to avoid constant requests to the site); one *json* file,
+file will contain information about each news (namely, its title, a link to it, the number of comments, tag, and publication date).
 
-В данном проекте задействованы такие библиотеки Python (версия 3.8), как:
+This project uses Python libraries (version 3.8) such as:
 + BeautifulSoup4
 + lxml
 + requests
@@ -19,22 +17,17 @@
 + os / shutil / pathlib
 + selenium
 
-Также позже доступен *exe* файл, мало ли кому-нибудь пригодится :)
+Altogether there are 2 branches available, with different versions of the parser: based on the library requests and selenium. The requests based version parses several pages, the selenium version parses a certain page.
 
-Всего доступно 2 ветки, в них расположены разные версии парсера: основанный на библиотеке
-requests и selenium. Версия на requests парсит несколько страниц, версия
-на selenium парсит определенную страницу.
+# Important
+The script has a break after each iteration (iterates through the news pages):
+```
+sleep(random.randint(2, 4))
+```
+Remove the call to this function if you don't need to pause between iterations. 
 
-ВАЖНО: в данном скрипте прописана остановка после каждой итерации
-(итерация происходит по страницам с новостями): time.sleep(random.randint(2, 4)).
-Уберите вызов этой функции, если вы не нуждаетесь в паузе между итерациями. 
+If you want to use the selenium version, you need to have Google Chrome version 96.0.4664.45 or you will need to change the driver file (chromedriver.exe) to your
+([here](https://chromedriver.storage.googleapis.com/index.html) you can download any version of Chrome). You do not need to change the name of the driver file.  
 
-Если вы хотите использовать версию на selenium, необходимо иметь Google Chrome версии 96.0.4664.45 либо 
-вам нужно будет поменять файл драйвера (chromedriver.exe) на свой
-([здесь](https://chromedriver.storage.googleapis.com/index.html) вы можете скачать драйвер любой версии
-Chrome). Менять название файла драйвера не нужно.  
-
-Также НЕ СЛЕДУЕТ создавать в папке data какие-либо свои папки либо файлы: при следующем запуске
-скрипта все содержимое директории data будет ПЕРЕЗАПИСАНО, то есть папка будет очищена для
-последующего помещения в нее свежих запрашиваемых json и html файлов.
+Also **don't create** any custom folders or files in data folder: the next time you run the script, all content of the data directory will be **rewrited**, i.e. the folder will be cleared for the next placement of fresh html files.
 * * *

@@ -116,7 +116,7 @@ def get_data(parsed_sport, pages_amount):
                 new_comments_class = new.find("span", class_="js-comments-count").get("data-id")
                 comments = comments_dict[new_comments_class]
             except Exception:
-                comments = None
+                comments = 0
 
             news_info.append({
                 "Заголовок": title,
