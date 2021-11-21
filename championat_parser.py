@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import requests
 
 
+# Функция отображения информации для пользователя
 def main_prompt():
     kinds_of_sport = {
         "1. Все новости": "/",
@@ -42,7 +43,7 @@ def main_prompt():
     while True:
         try:
             pages_amount = int(input("Сколько страниц с новостями будем просматривать? "
-                                    "Введите целое число (от 1 до 100): "))
+                                     "Введите целое число (от 1 до 100): "))
             if not (0 < pages_amount < 101):
                 raise Exception
 
@@ -53,26 +54,19 @@ def main_prompt():
     return parsed_sport, pages_amount
 
 
+# Функция создания папки data
 def data_folder():
-    if not os.path.exists("data"):
-        os.mkdir("data")
-    else:
-        folder = 'data'
-        for filename in os.listdir(folder):
-            file_path = os.path.join(folder, filename)
-            try:
-                if os.path.isfile(file_path) or os.path.islink(file_path):
-                    os.unlink(file_path)
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-            except Exception as e:
-                print('Failed to delete %s. Reason: %s' % (file_path, e))
+    if os.path.exists("data"):
+        shutil.rmtree("data")
+    os.mkdir("data")
 
 
+# Функция извлечения информации о комментариях
 def extract_comments(soup):
     all_comments = soup.find_all("span", class_="js-comments-count")
     json_url = f"https://c.rambler.ru/api/app/5/comments-count?"
 
+    # Через цикл генерируем ссылку обращения к серверу для получения json файла с необходимой информацией
     for comment in all_comments:
         json_url += "xid=" + comment.get("data-id") + "&"
 
@@ -82,6 +76,7 @@ def extract_comments(soup):
     return json_obj["xids"]
 
 
+# Функция, которая парсит страницы
 def get_data(parsed_sport, pages_amount):
     news_info = []
 
@@ -89,19 +84,17 @@ def get_data(parsed_sport, pages_amount):
     count = 0
     print(f"Всего итераций: {iteration_count}")
 
+    # Проходим по каждой странице с новостями
     for page_number in range(1, pages_amount + 1):
         url = f"https://www.championat.com/news{parsed_sport}{page_number}.html"
 
         req = requests.get(url, headers=headers)
         src = req.text
 
-        if parsed_sport == "/":
-            parsed_sport = "/all/"
-
-        with open(f"data/{parsed_sport[1:-1]}_{page_number}.html", "w", encoding="utf-8") as file:
+        with open(f"data/page_{page_number}.html", "w", encoding="utf-8") as file:
             file.write(src)
 
-        with open(f"data/{parsed_sport[1:-1]}_{page_number}.html", encoding="utf-8") as file:
+        with open(f"data/page_{page_number}.html", encoding="utf-8") as file:
             src = file.read()
 
         soup = BeautifulSoup(src, "lxml")
@@ -109,6 +102,7 @@ def get_data(parsed_sport, pages_amount):
 
         comments_dict = extract_comments(soup)
 
+        # В каждой новости на странице находим все сведения о ней
         for new in all_news:
             new_time = new.find("div", class_="news-item__time")
             new_content = new.find("div", class_="news-item__content")
@@ -132,9 +126,6 @@ def get_data(parsed_sport, pages_amount):
                 "Дата публикации": time
             })
 
-        if parsed_sport == "/all/":
-            parsed_sport = "/"
-
         count += 1
         print(f"# Новости со страницы {count} записаны...")
 
@@ -148,10 +139,12 @@ def get_data(parsed_sport, pages_amount):
 
         sleep(random.randint(2, 4))
 
-    with open(f"data/{parsed_sport[1:-1]}.json", "a+", encoding="utf-8") as file:
+    with open(f"news.json", "w", encoding="utf-8") as file:
         json.dump(news_info, file, indent=4, ensure_ascii=False)
 
 
+# Сначала создаем папку data, затем получаем пользовательские вводные данные и на основе их парсим новости определенного
+# вида спорта и количества страниц
 def main():
     data_folder()
     parsed_sport, pages_amount = main_prompt()
