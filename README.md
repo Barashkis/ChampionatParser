@@ -1,5 +1,4 @@
 # Project description
-* * *
 This repository contains files of my small project - parser of championat.com,
 which publishes sports news.
 
@@ -30,4 +29,3 @@ If you want to use the selenium version, you need to have Google Chrome version 
 ([here](https://chromedriver.storage.googleapis.com/index.html) you can download any version of Chrome). You do not need to change the name of the driver file.  
 
 Also **don't create** any custom folders or files in data folder: the next time you run the script, all content of the data directory will be **rewrited**, i.e. the folder will be cleared for the next placement of fresh html files.
-* * *
