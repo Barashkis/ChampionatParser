@@ -9,6 +9,7 @@ from fake_useragent import UserAgent
 from selenium.webdriver.chrome.service import Service
 
 
+# Функция отображения информации для пользователя
 def main_prompt():
     kinds_of_sport = {
         "1. Все новости": "/",
@@ -54,25 +55,20 @@ def main_prompt():
     return parsed_sport, page_number
 
 
+# Функция создания папки data
 def data_folder():
-    if not os.path.exists("data"):
-        os.mkdir("data")
-    else:
-        folder = 'data'
-        for filename in os.listdir(folder):
-            file_path = os.path.join(folder, filename)
-            try:
-                if os.path.isfile(file_path) or os.path.islink(file_path):
-                    os.unlink(file_path)
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-            except Exception as e:
-                print('Failed to delete %s. Reason: %s' % (file_path, e))
+    if os.path.exists("data"):
+        shutil.rmtree("data")
+    os.mkdir("data")
 
 
-def get_data(url, parsed_sport, page_number):
+# Функция, которая парсит страницы
+def get_data(parsed_sport, page_number):
+    url = f"https://www.championat.com/news{parsed_sport}{page_number}.html"
+
     news_info = []
 
+    # Создаем экземпляр браузера Chrome
     options = webdriver.ChromeOptions()
     useragent = UserAgent()
     options.add_argument(f"user-agent={useragent.random}")
@@ -86,14 +82,12 @@ def get_data(url, parsed_sport, page_number):
 
     print(f"Переходим на страницу новостей №{page_number}")
 
-    if parsed_sport == "/":
-        parsed_sport = "/all/"
-
+    # Извлекаем код нужной страницы с новостями
     try:
         browser.get(url=url)
         src = browser.page_source
 
-        with open(f"data/{parsed_sport[1:-1]}_{page_number}.html", "w", encoding="utf-8") as file:
+        with open(f"data/page_{page_number}.html", "w", encoding="utf-8") as file:
             file.write(src)
 
     except Exception as ex:
@@ -102,12 +96,13 @@ def get_data(url, parsed_sport, page_number):
         browser.close()
         browser.quit()
 
-    with open(f"data/{parsed_sport[1:-1]}_{page_number}.html", encoding="utf-8") as file:
+    with open(f"data/page_{page_number}.html", encoding="utf-8") as file:
         src = file.read()
 
     soup = BeautifulSoup(src, "lxml")
     all_news = soup.find_all("div", class_="news-item")
 
+    # Проходим по каждой новости из этой страницы и после записываем всю информацию о них в json файл
     for new in all_news:
         new_time = new.find("div", class_="news-item__time")
         new_content = new.find("div", class_="news-item__content")
@@ -128,23 +123,24 @@ def get_data(url, parsed_sport, page_number):
             "Заголовок": title,
             "Ссылка": href,
             "Тема": theme,
-            "Количество комментариев": comments,
+            "Количество комментариев": int(comments),
             "Дата публикации": time
         })
 
     print(f"# Новости со страницы записаны...")
 
-    with open(f"data/{parsed_sport[1:-1]}.json", "a+", encoding="utf-8") as file:
+    with open(f"news.json", "w", encoding="utf-8") as file:
         json.dump(news_info, file, indent=4, ensure_ascii=False)
 
     print("Работа завершена")
 
 
+# Сначала создаем папку data, затем получаем пользовательские вводные данные и на основе их парсим новости определенного
+# вида спорта определенной страницы
 def main():
     data_folder()
     parsed_sport, page_number = main_prompt()
-    url = f"https://www.championat.com/news{parsed_sport}{page_number}.html"
-    get_data(url, parsed_sport, page_number)
+    get_data(parsed_sport, page_number)
 
 
 if __name__ == "__main__":
