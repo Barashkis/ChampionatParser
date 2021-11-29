@@ -1,8 +1,6 @@
 import json
 import random
 from time import sleep
-import os
-import shutil
 
 from bs4 import BeautifulSoup
 import requests
@@ -54,13 +52,6 @@ def main_prompt():
     return parsed_sport, pages_amount
 
 
-# Функция создания папки data
-def data_folder():
-    if os.path.exists("data"):
-        shutil.rmtree("data")
-    os.mkdir("data")
-
-
 # Функция извлечения информации о комментариях
 def extract_comments(soup):
     all_comments = soup.find_all("span", class_="js-comments-count")
@@ -90,12 +81,6 @@ def get_data(parsed_sport, pages_amount):
 
         req = requests.get(url, headers=headers)
         src = req.text
-
-        with open(f"data/page_{page_number}.html", "w", encoding="utf-8") as file:
-            file.write(src)
-
-        with open(f"data/page_{page_number}.html", encoding="utf-8") as file:
-            src = file.read()
 
         soup = BeautifulSoup(src, "lxml")
         all_news = soup.find_all("div", class_="news-item")
@@ -146,7 +131,6 @@ def get_data(parsed_sport, pages_amount):
 # Сначала создаем папку data, затем получаем пользовательские вводные данные и на основе их парсим новости определенного
 # вида спорта и количества страниц
 def main():
-    data_folder()
     parsed_sport, pages_amount = main_prompt()
     get_data(parsed_sport, pages_amount)
 
