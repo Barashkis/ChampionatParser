@@ -1,12 +1,17 @@
 import json
-import random
-from time import sleep
+import asyncio
+import aiohttp
 
 from bs4 import BeautifulSoup
-import requests
+
+headers = {
+    "Accept": "*/*",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
+       Chrome/95.0.4638.69 Safari/537.36"
+}
+news_info = []
 
 
-# Функция отображения информации для пользователя
 def main_prompt():
     kinds_of_sport = {
         "1. Все новости": "/",
@@ -52,42 +57,31 @@ def main_prompt():
     return parsed_sport, pages_amount
 
 
-# Функция извлечения информации о комментариях
-def extract_comments(soup):
+async def extract_comments(session, soup):
     all_comments = soup.find_all("span", class_="js-comments-count")
-    json_url = f"https://c.rambler.ru/api/app/5/comments-count?"
+    url = f"https://c.rambler.ru/api/app/5/comments-count?"
 
-    # Через цикл генерируем ссылку обращения к серверу для получения json файла с необходимой информацией
     for comment in all_comments:
-        json_url += "xid=" + comment.get("data-id") + "&"
+        url += "xid=" + comment.get("data-id") + "&"
 
-    json_data = requests.get(headers=headers, url=json_url).text
+    async with session.get(url=url, headers=headers) as response:
+        json_data = await response.text()
+
     json_obj = json.loads(json_data)
 
     return json_obj["xids"]
 
 
-# Функция, которая парсит страницы
-def get_data(parsed_sport, pages_amount):
-    news_info = []
+async def get_page_data(session, page, parsed_sport):
+    url = f"https://www.championat.com/news{parsed_sport}{page}.html"
 
-    iteration_count = pages_amount
-    count = 0
-    print(f"Всего итераций: {iteration_count}")
-
-    # Проходим по каждой странице с новостями
-    for page_number in range(1, pages_amount + 1):
-        url = f"https://www.championat.com/news{parsed_sport}{page_number}.html"
-
-        req = requests.get(url, headers=headers)
-        src = req.text
-
+    async with session.get(url=url, headers=headers) as response:
+        src = await response.text()
         soup = BeautifulSoup(src, "lxml")
         all_news = soup.find_all("div", class_="news-item")
 
-        comments_dict = extract_comments(soup)
+        comments_dict = await extract_comments(session, soup)
 
-        # В каждой новости на странице находим все сведения о ней
         for new in all_news:
             new_time = new.find("div", class_="news-item__time")
             new_content = new.find("div", class_="news-item__content")
@@ -95,7 +89,7 @@ def get_data(parsed_sport, pages_amount):
             title = new_content.find_all("a")[0].text
             href = "https://www.championat.com" + new_content.find_all("a")[0].get("href")
             tag = new.find("a", class_="news-item__tag").text
-            time = new_time.text
+            date = new_time.text
 
             try:
                 new_comments_class = new.find("span", class_="js-comments-count").get("data-id")
@@ -108,37 +102,28 @@ def get_data(parsed_sport, pages_amount):
                 "Ссылка": href,
                 "Тег": tag,
                 "Количество комментариев": comments,
-                "Дата публикации": time
+                "Дата публикации": date
             })
+        print(f"[INFO] Обработана страница {page}")
 
-        count += 1
-        print(f"# Новости со страницы {count} записаны...")
+async def gather_data(pages_amount, parsed_sport):
+    async with aiohttp.ClientSession() as session:
+        tasks = []
 
-        iteration_count -= 1
+        for page in range(1, pages_amount):
+            task = asyncio.create_task(get_page_data(session, page, parsed_sport))
+            tasks.append(task)
 
-        if iteration_count == 0:
-            print("Работа завершена")
-            break
+        await asyncio.gather(*tasks)
 
-        print(f"Осталось итераций: {iteration_count}")
 
-        sleep(random.randint(2, 4))
+def main():
+    parsed_sport, pages_amount = main_prompt()
+    asyncio.run(gather_data(pages_amount, parsed_sport))
 
     with open(f"news.json", "w", encoding="utf-8") as file:
         json.dump(news_info, file, indent=4, ensure_ascii=False)
 
 
-# Сначала создаем папку data, затем получаем пользовательские вводные данные и на основе их парсим новости определенного
-# вида спорта и количества страниц
-def main():
-    parsed_sport, pages_amount = main_prompt()
-    get_data(parsed_sport, pages_amount)
-
-
 if __name__ == "__main__":
-    headers = {
-        "Accept": "*/*",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
-           Chrome/95.0.4638.69 Safari/537.36"
-    }
     main()
