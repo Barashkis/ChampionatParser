@@ -12,41 +12,44 @@ which publishes sports news.
 After starting the parser you will be prompted to choose the type of sport and the number 
 of pages with news, that you want to extract from the site.
 
-As a result a directory *data* will be created, which will contain the HTML pages
-with all the news (to avoid constant requests to the site); one *json* file,
-file will contain information about each news (namely, its title, a link to it, 
+As a result a one *json* file that contains information about each news (namely, its title, a link to it, 
 the number of comments, tag, and publication date).
 
-This project uses Python libraries (version 3.8) such as:
+This project uses Python libraries (version 3.7) such as:
 + BeautifulSoup4
 + lxml
 + requests
 + json
-+ os / shutil / pathlib
++ pathlib
 + selenium
++ asyncio
++ aiohttp
 
-Altogether there are 2 branches available, with different versions of the parser: 
-based on the library requests and selenium.
-The requests based version parses several pages, the selenium version parses a certain page.
+Altogether there are 3 branches available, with different versions of the parser: 
+based on the library requests, selenium and aiohttp.
+The requests and aiohttp based version parses several pages, the selenium 
+version parses a certain page.
 
 # How to use
 Clone or fork the repository, then open it in PyCharm (or terminal) and enter the command to run the script:
 ```
 python championat_parser.py //run the requests based version
 python championat_parser_selenium.py //run the selenium based version (read additional information in the next section)
+python championat_parser_async.py //run the async based version
 ```
 
 If it doesn't work, try these corresponding commands:
 ```
 python3 championat_parser.py
 python3 championat_parser_selenium.py
+python3 championat_parser_async.py
 ```
 
 That's all, at the end of the script work you will get json file contains all information of the recent 
 sport news!
 
 # Important
-The script has a break after each iteration (iterates through the news pages):
+The script *championat_parser.py* has a break after each iteration (iterates through the news pages):
 ```
 sleep(random.randint(2, 4)) //pauses the script from 2 to 4 seconds (in random order) 
 ```
