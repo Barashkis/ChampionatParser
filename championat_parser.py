@@ -128,7 +128,7 @@ def get_data(parsed_sport, pages_amount):
         json.dump(news_info, file, indent=4, ensure_ascii=False)
 
 
-# Сначала создаем папку data, затем получаем пользовательские вводные данные и на основе их парсим новости определенного
+# Получаем пользовательские вводные данные и на основе их парсим новости определенного
 # вида спорта и количества страниц
 def main():
     parsed_sport, pages_amount = main_prompt()
