@@ -1,6 +1,7 @@
 import json
 import random
 from time import sleep
+from tqdm import tqdm
 
 from bs4 import BeautifulSoup
 import requests
@@ -71,12 +72,8 @@ def extract_comments(soup):
 def get_data(parsed_sport, pages_amount):
     news_info = []
 
-    iteration_count = pages_amount
-    count = 0
-    print(f"Всего итераций: {iteration_count}")
-
     # Проходим по каждой странице с новостями
-    for page_number in range(1, pages_amount + 1):
+    for page_number in tqdm(range(1, pages_amount + 1)):
         url = f"https://www.championat.com/news{parsed_sport}{page_number}.html"
 
         req = requests.get(url, headers=headers)
@@ -111,21 +108,12 @@ def get_data(parsed_sport, pages_amount):
                 "Дата публикации": time
             })
 
-        count += 1
-        print(f"# Новости со страницы {count} записаны...")
-
-        iteration_count -= 1
-
-        if iteration_count == 0:
-            print("Работа завершена")
-            break
-
-        print(f"Осталось итераций: {iteration_count}")
-
         sleep(random.randint(2, 4))
 
     with open(f"news.json", "w", encoding="utf-8") as file:
         json.dump(news_info, file, indent=4, ensure_ascii=False)
+
+    print("Работа завершена!")
 
 
 # Получаем пользовательские вводные данные и на основе их парсим новости определенного
