@@ -106,6 +106,7 @@ async def get_page_data(session, page, parsed_sport):
             })
         print(f"[INFO] Обработана страница {page}")
 
+
 async def gather_data(pages_amount, parsed_sport):
     async with aiohttp.ClientSession() as session:
         tasks = []
