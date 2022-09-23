@@ -1,10 +1,13 @@
 import json
 import random
-from time import sleep
-from tqdm import tqdm
 
-from bs4 import BeautifulSoup
 import requests
+
+from faker import Faker
+from tqdm import tqdm
+from bs4 import BeautifulSoup
+
+from time import sleep
 
 
 # Функция отображения информации для пользователя
@@ -54,18 +57,16 @@ def main_prompt():
 
 
 # Функция извлечения информации о комментариях
-def extract_comments(soup):
-    all_comments = soup.find_all("span", class_="js-comments-count")
+def extract_comments(all_comments, headers):
     json_url = f"https://c.rambler.ru/api/app/5/comments-count?"
 
     # Через цикл генерируем ссылку обращения к серверу для получения json файла с необходимой информацией
     for comment in all_comments:
         json_url += "xid=" + comment.get("data-id") + "&"
 
-    json_data = requests.get(headers=headers, url=json_url).text
-    json_obj = json.loads(json_data)
+    data = requests.get(headers=headers, url=json_url).json()
 
-    return json_obj["xids"]
+    return data["xids"]
 
 
 # Функция, которая парсит страницы
@@ -74,6 +75,14 @@ def get_data(parsed_sport, pages_amount):
 
     # Проходим по каждой странице с новостями
     for page_number in tqdm(range(1, pages_amount + 1)):
+        Faker.seed(random.randint(0, 100))
+        fake = Faker()
+
+        headers = {
+            "Accept": "*/*",
+            "User-Agent": fake.chrome()
+        }
+
         url = f"https://www.championat.com/news{parsed_sport}{page_number}.html"
 
         req = requests.get(url, headers=headers)
@@ -82,7 +91,8 @@ def get_data(parsed_sport, pages_amount):
         soup = BeautifulSoup(src, "lxml")
         all_news = soup.find_all("div", class_="news-item")
 
-        comments_dict = extract_comments(soup)
+        all_comments = soup.find_all("span", class_="js-comments-count")
+        comments_dict = extract_comments(all_comments, headers)
 
         # В каждой новости на странице находим все сведения о ней
         for new in all_news:
@@ -124,9 +134,4 @@ def main():
 
 
 if __name__ == "__main__":
-    headers = {
-        "Accept": "*/*",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
-           Chrome/95.0.4638.69 Safari/537.36"
-    }
     main()
