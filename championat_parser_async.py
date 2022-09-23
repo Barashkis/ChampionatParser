@@ -1,64 +1,75 @@
 import json
 import asyncio
+import random
+
 import aiohttp
 
 from bs4 import BeautifulSoup
+from faker import Faker
 
-headers = {
-    "Accept": "*/*",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
-       Chrome/95.0.4638.69 Safari/537.36"
-}
 news_info = []
 
 
 def main_prompt():
     kinds_of_sport = {
-        "1. Все новости": "/",
-        "2. Футбол": "/football/",
-        "3. Хоккей": "/hockey/",
-        "4. Бокс": "/boxing/",
-        "5. Теннис": "/tennis/",
-        "6. Фигурное катание": "/figureskating/"
+        "Все новости": "/",
+        "Футбол": "/football/",
+        "Хоккей": "/hockey/",
+        "Бокс": "/boxing/",
+        "Теннис": "/tennis/",
+        "Фигурное катание": "/figureskating/"
     }
 
-    count = 1
+    for sport in enumerate(kinds_of_sport.keys(), start=1):
+        print(f"{sport[0]}. {sport[1]}")
 
-    for sport in kinds_of_sport.keys():
-        print(sport)
-        count += 1
-
+    input_sport = input("Из предложенного списка ведите число, это будет вид спорта, который мы будем "
+                        "парсить с сайта championat.com: ")
     while True:
         try:
-            input_sport = int(input("Из предложенного списка ведите число, это будет вид спорта, который мы будем "
-                                    "парсить с сайта championat.com: "))
+            input_sport = int(input_sport)
+        except ValueError:
+            input_sport = input("Вы ввели не число, попробуйте снова: ")
 
-            if not (0 < input_sport < 7):
-                raise Exception
+            continue
 
+        if not 0 < input_sport < len(kinds_of_sport):
+            input_sport = input("Вы ввели неправильное число, попробуйте снова: ")
+
+            continue
+
+        try:
             dict_key = list(kinds_of_sport.keys())[input_sport - 1]
             parsed_sport = kinds_of_sport[dict_key]
+        except IndexError:
+            input_sport = input("Вы ввели неправильное число, попробуйте снова: ")
 
-            break
-        except Exception:
-            print("Вы ввели неправильное число, попробуйте снова.")
+            continue
 
+        break
+
+    pages_amount = input("Сколько страниц с новостями будем просматривать? "
+                         "Введите целое число (от 1 до 100): ")
     while True:
         try:
-            pages_amount = int(input("Сколько страниц с новостями будем просматривать? "
-                                     "Введите целое число (от 1 до 100): "))
-            if not (0 < pages_amount < 101):
-                raise Exception
+            pages_amount = int(pages_amount)
+        except ValueError:
+            pages_amount = input("Введите, пожалуйста, число в пределах от 1 до 100 (было введено не число): ")
 
-            break
-        except Exception:
-            print("Введите, пожалуйста, число в пределах от 1 до 100.")
+            continue
+
+        if not (0 < pages_amount < 101):
+            pages_amount = input("Введите, пожалуйста, число в пределах от 1 до 100 "
+                                 "(было введено число не из этого диапазона): ")
+
+            continue
+
+        break
 
     return parsed_sport, pages_amount
 
 
-async def extract_comments(session, soup):
-    all_comments = soup.find_all("span", class_="js-comments-count")
+async def extract_comments(session, all_comments, headers):
     url = f"https://c.rambler.ru/api/app/5/comments-count?"
 
     for comment in all_comments:
@@ -73,6 +84,14 @@ async def extract_comments(session, soup):
 
 
 async def get_page_data(session, page, parsed_sport):
+    Faker.seed(random.randint(0, 100))
+    fake = Faker()
+
+    headers = {
+        "Accept": "*/*",
+        "User-Agent": fake.chrome()
+    }
+
     url = f"https://www.championat.com/news{parsed_sport}{page}.html"
 
     async with session.get(url=url, headers=headers) as response:
@@ -80,7 +99,8 @@ async def get_page_data(session, page, parsed_sport):
         soup = BeautifulSoup(src, "lxml")
         all_news = soup.find_all("div", class_="news-item")
 
-        comments_dict = await extract_comments(session, soup)
+        all_comments = soup.find_all("span", class_="js-comments-count")
+        comments_dict = await extract_comments(session, all_comments, headers)
 
         for new in all_news:
             new_time = new.find("div", class_="news-item__time")
@@ -104,6 +124,7 @@ async def get_page_data(session, page, parsed_sport):
                 "Количество комментариев": comments,
                 "Дата публикации": date
             })
+
         print(f"[INFO] Обработана страница {page}")
 
 
@@ -111,7 +132,7 @@ async def gather_data(pages_amount, parsed_sport):
     async with aiohttp.ClientSession() as session:
         tasks = []
 
-        for page in range(1, pages_amount):
+        for page in range(1, pages_amount + 1):
             task = asyncio.create_task(get_page_data(session, page, parsed_sport))
             tasks.append(task)
 
