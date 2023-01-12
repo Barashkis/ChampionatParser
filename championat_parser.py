@@ -10,6 +10,43 @@ from bs4 import BeautifulSoup
 from time import sleep
 
 
+# Класс исключения, вызывающегося, если число не входит в определенный диапазон
+class RangeError(Exception):
+    def __init__(self, number, end_range):
+        self.number = number
+        self.end_range = end_range
+
+    def __str__(self):
+        return f"Ошибка: число должно быть в пределах от 1 до {self.end_range} включительно." \
+               f"Было введено число: {self.number}"
+
+
+# Функция валидации переданного числа
+def is_valid_number(number, range_end):
+    try:
+        if not (1 <= int(number) <= range_end):
+            raise RangeError(number, range_end)
+    except ValueError:
+        print("Вы ввели не число. Пожалуйста, повторите попытку.")
+    except RangeError:
+        print(f"Число должно быть в пределах от 1 до {range_end} включительно. "
+              "Пожалуйста, повторите попытку.")
+    else:
+        return True
+
+    return False
+
+
+# Функция опроса пользователя
+def poll_user(poll_text, end_range):
+    while True:
+        number = input(poll_text)
+        if is_valid_number(number, end_range):
+            break
+
+    return int(number)
+
+
 # Функция отображения информации для пользователя
 def main_prompt():
     kinds_of_sport = {
@@ -21,37 +58,20 @@ def main_prompt():
         "6. Фигурное катание": "/figureskating/"
     }
 
-    count = 1
+    list(map(print, list(kinds_of_sport.keys())))
 
-    for sport in kinds_of_sport.keys():
-        print(sport)
-        count += 1
+    input_sport = poll_user(
+        "Из предложенного списка ведите число, это будет вид спорта, который мы будем парсить с сайта championat.com: ",
+        len(kinds_of_sport)
+    )
 
-    while True:
-        try:
-            input_sport = int(input("Из предложенного списка ведите число, это будет вид спорта, который мы будем "
-                                    "парсить с сайта championat.com: "))
+    dict_key = list(kinds_of_sport.keys())[input_sport - 1]
+    parsed_sport = kinds_of_sport[dict_key]
 
-            if not (0 < input_sport < 7):
-                raise Exception
-
-            dict_key = list(kinds_of_sport.keys())[input_sport - 1]
-            parsed_sport = kinds_of_sport[dict_key]
-
-            break
-        except Exception:
-            print("Вы ввели неправильное число, попробуйте снова.")
-
-    while True:
-        try:
-            pages_amount = int(input("Сколько страниц с новостями будем просматривать? "
-                                     "Введите целое число (от 1 до 100): "))
-            if not (0 < pages_amount < 101):
-                raise Exception
-
-            break
-        except Exception:
-            print("Введите, пожалуйста, число в пределах от 1 до 100.")
+    pages_amount = poll_user(
+        "Сколько страниц с новостями будем просматривать? Введите целое число (от 1 до 100): ",
+        100
+    )
 
     return parsed_sport, pages_amount
 
